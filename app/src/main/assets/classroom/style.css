@@ -236,3 +236,25 @@ button.big { min-height: 58px; border-radius: 14px; font-size: 19px; font-weight
 /* keep the lesson bar clear of the AI panel */
 #app.ai-open #player { left: calc((100vw - var(--ai)) / 2); width: min(1000px, calc(100vw - var(--ai) - 40px)); }
 @media (max-width: 760px) { #app.ai-open #player { left: 50%; width: calc(100vw - 24px); } }
+
+/* ---------- My Lessons ---------- */
+.tabs button { padding: 12px 4px; font-size: 15px; }
+#libBadge:not(:empty) { display: inline-block; min-width: 22px; padding: 1px 6px; border-radius: 999px; background: var(--amber); color: #111827; font-size: 12px; margin-left: 2px; }
+#libView { overflow-y: auto; gap: 10px; }
+.lib-tools { display: grid; grid-template-columns: 1fr 140px; gap: 8px; }
+#libList { display: flex; flex-direction: column; gap: 8px; }
+.lesson-item { display: flex; align-items: center; gap: 8px; padding: 10px 10px 10px 14px; border: 1px solid var(--line); border-radius: 14px; background: #fff; }
+.lesson-item:hover { border-color: #93c5fd; }
+.li-main { flex: 1; min-width: 0; }
+.li-main b { display: block; font-size: 17px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.li-main small { color: var(--muted); }
+.lesson-item button { width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center; font-size: 18px; flex: none; }
+.lesson-item .li-play { background: var(--navy); color: #fff; }
+.lesson-item .li-del { background: #f1f5f9; color: #b91c1c; }
+.lesson-item .li-del.armed { background: #dc2626; color: #fff; font-size: 12px; font-weight: 700; }
+.lib-empty { text-align: center; color: var(--muted); padding: 24px 12px; border: 2px dashed var(--line); border-radius: 14px; line-height: 1.5; }
+.bulk { border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px; }
+.bulk summary { font-weight: 700; cursor: pointer; padding: 4px 0; color: var(--navy); }
+.bulk textarea { width: 100%; border: 1px solid #cbd5e1; border-radius: 10px; padding: 8px; margin-top: 8px; resize: vertical; }
+.lib-share button, .btnlike { min-height: 48px; padding: 0 16px; border-radius: 12px; background: #f1f5f9; font-weight: 600; display: inline-flex; align-items: center; cursor: pointer; }
+.msg .go-lib { margin-top: 8px; display: inline-block; padding: 8px 12px; border-radius: 10px; background: #fff; color: var(--navy); font-weight: 700; }

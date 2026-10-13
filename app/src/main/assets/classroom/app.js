@@ -200,6 +200,8 @@
     $$('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
     $('#chatView').hidden = t !== 'chat';
     $('#lessonView').hidden = t !== 'lesson';
+    $('#libView').hidden = t !== 'lib';
+    if (t === 'lib') Teacher.renderLibrary();
   }
   $('#aiBtn').onclick = () => $('#app').classList.contains('ai-open') ? closeAI() : openAI();
   $('#aiClose').onclick = closeAI;

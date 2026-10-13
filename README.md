@@ -28,6 +28,9 @@ and a **multilingual AI Teacher** that explains aloud and writes on the board.
   on the board, then runs a quiz. Pause / next / previous / ask-a-question controls with captions.
 - **Ask & Talk**: ask by voice (mic) or typing; answers are spoken and written on the board
 - Looks at the board: “Explain the board” and “Check the answer on the board” (sends a picture of the page)
+- **My Lessons (works offline)**: every generated lesson is saved on the panel and can be replayed
+  with no internet — voice, board writing, diagrams and quiz. Prepare many lessons at once
+  (one topic per line), and Export/Import lesson files to copy them to other panels.
 - Voice commands in any language, e.g. “clear the board”, “नया पेज”, “start a 5 minute timer”,
   “open the protractor”, “use chalkboard background”
 

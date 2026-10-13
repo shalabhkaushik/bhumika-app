@@ -260,6 +260,59 @@ class ClassroomBridge(private val act: ClassroomActivity) {
         else -> ""
     }
 
+    // ---------------- Saved lessons (offline library) ----------------
+    private val lessonDir: File by lazy { File(act.filesDir, "lessons").apply { mkdirs() } }
+    private fun lessonFile(id: String) = File(lessonDir, id.replace(Regex("[^A-Za-z0-9_-]"), "_").take(80) + ".json")
+
+    /** Stores a lesson record (JSON) on the device so it can be played without internet. */
+    @JavascriptInterface
+    fun saveLesson(id: String, json: String): Boolean = try {
+        lessonFile(id).writeText(json, Charsets.UTF_8); true
+    } catch (e: Exception) { false }
+
+    /** Returns a JSON array with the details of every saved lesson (without the lesson body). */
+    @JavascriptInterface
+    fun listLessons(): String {
+        val out = JSONArray()
+        lessonDir.listFiles { f -> f.name.endsWith(".json") }?.forEach { f ->
+            try {
+                val o = JSONObject(f.readText(Charsets.UTF_8))
+                o.remove("reply")
+                out.put(o)
+            } catch (_: Exception) { }
+        }
+        return out.toString()
+    }
+
+    @JavascriptInterface
+    fun loadLesson(id: String): String = try { lessonFile(id).readText(Charsets.UTF_8) } catch (e: Exception) { "" }
+
+    @JavascriptInterface
+    fun deleteLesson(id: String): Boolean = lessonFile(id).delete()
+
+    /** Writes a text file (e.g. exported lessons) to Downloads/Bhumika. Returns where it went, or "". */
+    @JavascriptInterface
+    fun exportFile(name: String, content: String): String {
+        val file = name.replace(Regex("[^A-Za-z0-9._-]"), "_")
+        val bytes = content.toByteArray(Charsets.UTF_8)
+        return try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val cv = ContentValues().apply {
+                    put(MediaStore.Downloads.DISPLAY_NAME, file)
+                    put(MediaStore.Downloads.MIME_TYPE, "application/json")
+                    put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/Bhumika")
+                }
+                val uri = act.contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, cv) ?: return ""
+                act.contentResolver.openOutputStream(uri)?.use { it.write(bytes) }
+                "Downloads/Bhumika/$file"
+            } else {
+                val dir = File(act.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "Bhumika").apply { mkdirs() }
+                File(dir, file).writeBytes(bytes)
+                File(dir, file).absolutePath
+            }
+        } catch (e: Exception) { "" }
+    }
+
     // ---------------- Files & navigation ----------------
     /** Saves a board page (data URL) to Pictures/Bhumika. Returns a short location string or "" on failure. */
     @JavascriptInterface

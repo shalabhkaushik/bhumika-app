@@ -85,7 +85,7 @@
       <label>Language <select id="aiLang"></select></label>
       <label class="switch"><input type="checkbox" id="aiVoice" checked><span>Voice</span></label>
     </div>
-    <div class="tabs"><button class="on" data-tab="chat">Ask &amp; Talk</button><button data-tab="lesson">Teach a Lesson</button></div>
+    <div class="tabs"><button class="on" data-tab="chat">Ask &amp; Talk</button><button data-tab="lesson">Teach a Lesson</button><button data-tab="lib">My Lessons <span id="libBadge"></span></button></div>
 
     <section id="chatView" class="view">
       <div id="chatLog">
@@ -114,8 +114,27 @@
       <label>Length <span id="lStepsLbl">6 steps</span><input type="range" id="lSteps" min="3" max="12" value="6"></label>
       <label class="switch small"><input type="checkbox" id="lQuiz" checked><span>End with a quiz</span></label>
       <label class="switch small"><input type="checkbox" id="lChalk"><span>Use chalkboard background</span></label>
+      <label class="switch small"><input type="checkbox" id="lSave" checked><span>Save for offline use (My Lessons)</span></label>
       <button class="primary big" id="lStart">✦ Start teaching</button>
       <p class="hint">The AI teacher writes notes and diagrams on the board while explaining aloud. You can pause anytime and ask questions in the <b>Ask &amp; Talk</b> tab — or press the mic on the lesson bar.</p>
+    </section>
+    <section id="libView" class="view" hidden>
+      <div class="lib-tools">
+        <input id="libSearch" type="search" placeholder="Search saved lessons…">
+        <select id="libLangFilter"></select>
+      </div>
+      <div id="libList"></div>
+      <details class="bulk">
+        <summary>⚡ Prepare many lessons at once</summary>
+        <p class="hint">Write one topic per line. They use the class, subject, language and length chosen in <b>Teach a Lesson</b>. Needs internet while preparing — afterwards they play without internet.</p>
+        <textarea id="bulkTopics" rows="5" placeholder="Photosynthesis&#10;Parts of a plant&#10;The water cycle"></textarea>
+        <div class="row"><button class="primary" id="bulkStart">Prepare lessons</button><span id="bulkStatus" class="hint"></span></div>
+      </details>
+      <div class="row lib-share">
+        <button id="libExport">⤓ Export all</button>
+        <label class="btnlike">⤒ Import<input type="file" id="libImport" accept=".json,application/json" hidden></label>
+      </div>
+      <p class="hint">Export saves a lesson file in Downloads/Bhumika. Copy it to another panel (pen drive, WhatsApp, Drive) and use Import there.</p>
     </section>
   </aside>
 

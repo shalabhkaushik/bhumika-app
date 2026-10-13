@@ -107,7 +107,7 @@ Leave out "quiz" and "actions" when not needed. ${mode === 'lesson' ? '' : 'For 
     if (/401|authentication/i.test(m)) return 'The API key was rejected. Please check it in settings.';
     if (/429|rate/i.test(m)) return 'Too many requests right now. Please wait a moment and try again.';
     if (/529|overloaded/i.test(m)) return 'The AI service is busy. Please try again in a few seconds.';
-    if (/Unable to resolve|network|failed to fetch|timeout|ConnectException|UnknownHost/i.test(m)) return 'No internet connection. The board and tools still work offline.';
+    if (/Unable to resolve|network|failed to fetch|timeout|ConnectException|UnknownHost/i.test(m)) return 'No internet connection. The board, tools and saved lessons (My Lessons) still work offline.';
     return 'Something went wrong: ' + m;
   }
 
@@ -132,17 +132,42 @@ Leave out "quiz" and "actions" when not needed. ${mode === 'lesson' ? '' : 'For 
       addMsg('ai', said || '(done)', said ? replay : null);
       runActions(reply.actions);
       if (!state.writeBoard && !opts.image) reply.steps.forEach(s => s.board = []);
-      await Player.play(reply, { title: '' });
+      Player.play(reply, { title: '' });   // plays in the background; AI is free for the next question
     } catch (e) {
       typing.remove();
-      addMsg('err', friendlyError(e));
+      addMsg('err', friendlyError(e), offlineHint(e));
     } finally {
-      state.busy = false; setStatus('Ready');
+      state.busy = false; setStatus(navigator.onLine === false ? 'Offline' : 'Ready');
     }
   }
 
-  /** Full lesson generation + playback. */
-  async function teachLesson({ topic, grade, subject, steps, quiz, chalk }) {
+  /** Asks the AI for a complete lesson; resolves to the parsed reply (does not play it). */
+  async function generateLesson({ topic, grade, subject, steps, quiz }) {
+    const prompt = `Teach a complete classroom lesson.
+Topic: ${topic}
+Class: ${grade}
+Subject: ${subject}
+Use about ${steps} steps. Step 1: a "title" item with the topic plus a short hook question to the class. Middle steps: explain the concepts one by one with simple examples; include at least one figure or table where it helps; one "box" with the key idea to remember. Last step: a short recap with bullets.
+Each step's "say" is 3 to 6 spoken sentences; each step's "board" has 1 to 4 concise items.
+${quiz ? 'Finish with a "quiz" of 4 multiple-choice questions (4 options each).' : 'Do not include a quiz.'}`;
+    const raw = await request(prompt, { mode: 'lesson' });
+    const reply = parseReply(raw);
+    if (!reply.steps.length || !reply.steps.some(s => s && s.say)) throw new Error('The lesson came back empty. Please try again.');
+    return reply;
+  }
+
+  function lessonRecord(p, reply) {
+    return {
+      id: 'l' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      title: p.topic, grade: p.grade, subject: p.subject, lang: state.lang,
+      chalk: !!p.chalk, steps: reply.steps.length, quizCount: Array.isArray(reply.quiz) ? reply.quiz.length : 0,
+      created: Date.now(), reply
+    };
+  }
+
+  /** Full lesson: generate, save for offline use, then teach it on the board. */
+  async function teachLesson(p) {
+    const { topic, grade, chalk } = p;
     if (!topic || state.busy) return;
     state.grade = grade || state.grade;
     state.lastTopic = topic;
@@ -151,28 +176,147 @@ Leave out "quiz" and "actions" when not needed. ${mode === 'lesson' ? '' : 'For 
     setStatus('Preparing lesson…');
     toast('✦ Preparing a lesson on “' + topic + '”…');
     try {
-      const prompt = `Teach a complete classroom lesson.
-Topic: ${topic}
-Class: ${grade}
-Subject: ${subject}
-Use about ${steps} steps. Step 1: a "title" item with the topic plus a short hook question to the class. Middle steps: explain the concepts one by one with simple examples; include at least one figure or table where it helps; one "box" with the key idea to remember. Last step: a short recap with bullets.
-Each step's "say" is 3 to 6 spoken sentences; each step's "board" has 1 to 4 concise items.
-${quiz ? 'Finish with a "quiz" of 4 multiple-choice questions (4 options each).' : 'Do not include a quiz.'}`;
-      const raw = await request(prompt, { mode: 'lesson' });
-      const reply = parseReply(raw);
-      if (!reply.steps.length) throw new Error('The lesson came back empty. Please try again.');
+      const reply = await generateLesson(p);
       remember('assistant', ('Lesson on ' + topic + ': ' + speechOf(reply)).slice(0, 3000));
-      if (board.page.objs.length || board.page.bgImg) board.addPage();
-      if (chalk) board.setBg('chalk');
-      App.closeAI();
-      await Player.play(reply, { title: topic, lesson: true });
+      if (p.save !== false) { Native.lessons.save(lessonRecord(p, reply)); updateBadge(); }
+      startLesson(reply, { title: topic, chalk });
     } catch (e) {
-      addMsg('err', friendlyError(e));
+      addMsg('err', friendlyError(e), offlineHint(e));
       App.openAI('chat');
     } finally {
-      state.busy = false; setStatus('Ready');
+      state.busy = false; setStatus(navigator.onLine === false ? 'Offline' : 'Ready');
       btn.disabled = false; btn.textContent = '✦ Start teaching';
     }
+  }
+
+  async function startLesson(reply, { title, chalk }) {
+    if (board.page.objs.length || board.page.bgImg) board.addPage();
+    if (chalk) board.setBg('chalk');
+    App.closeAI();
+    await Player.play(reply, { title, lesson: true });
+  }
+
+  // ---------------- My Lessons (offline library) ----------------
+  const isNetErr = (e) => /Unable to resolve|network|failed to fetch|timeout|ConnectException|UnknownHost|NO_KEY/i.test(String(e && e.message || e));
+
+  function offlineHint(e) {
+    if (!isNetErr(e) || !Native.lessons.list().length) return null;
+    const b = document.createElement('button');
+    b.className = 'go-lib'; b.textContent = '📚 Play a saved lesson (works offline)';
+    b.onclick = () => App.openAI('lib');
+    return b;
+  }
+
+  function updateBadge() {
+    const n = Native.lessons.list().length;
+    $('#libBadge').textContent = n ? n : '';
+  }
+
+  /** Plays a saved lesson — no internet needed. */
+  async function playSaved(id) {
+    const rec = Native.lessons.load(id);
+    if (!rec || !rec.reply) { toast('This lesson could not be opened.'); return; }
+    if (rec.lang && rec.lang !== state.lang) { state.lang = rec.lang; $('#aiLang').value = rec.lang; persist(); }
+    state.lastTopic = rec.title;
+    state.grade = rec.grade || state.grade;
+    remember('user', 'Teach the lesson: ' + rec.title);
+    remember('assistant', ('Lesson on ' + rec.title + ': ' + speechOf(rec.reply)).slice(0, 3000));
+    await startLesson(rec.reply, { title: rec.title, chalk: rec.chalk });
+  }
+
+  function renderLibrary() {
+    const list = $('#libList');
+    const q = ($('#libSearch').value || '').trim().toLowerCase();
+    const lf = $('#libLangFilter').value;
+    const all = Native.lessons.list().sort((a, b) => (b.created || 0) - (a.created || 0));
+    const items = all.filter(r => (!lf || r.lang === lf) &&
+      (!q || [r.title, r.subject, r.grade].join(' ').toLowerCase().includes(q)));
+    updateBadge();
+    list.innerHTML = '';
+    if (!items.length) {
+      list.innerHTML = `<div class="lib-empty">${all.length ? 'No saved lesson matches.' : 'No saved lessons yet.<br>Every lesson from <b>Teach a Lesson</b> is saved here automatically and can be played without internet.'}</div>`;
+      return;
+    }
+    for (const r of items) {
+      const el = document.createElement('div');
+      el.className = 'lesson-item';
+      const date = r.created ? new Date(r.created).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '';
+      const L = langInfo(r.lang || 'en-IN');
+      el.innerHTML = '<div class="li-main"><b></b><small></small></div><button class="li-play" title="Play lesson">▶</button><button class="li-del" title="Delete">🗑</button>';
+      el.querySelector('b').textContent = r.title || 'Lesson';
+      if (L.rtl) el.querySelector('b').dir = 'auto';
+      el.querySelector('small').textContent = [r.grade, r.subject, L.native, (r.steps || '?') + ' steps' + (r.quizCount ? ' + quiz' : ''), date].filter(Boolean).join(' · ');
+      el.querySelector('.li-play').onclick = () => playSaved(r.id);
+      const del = el.querySelector('.li-del');
+      del.onclick = () => {
+        if (del.classList.contains('armed')) { Native.lessons.remove(r.id); renderLibrary(); toast('Lesson deleted'); return; }
+        del.classList.add('armed'); del.textContent = 'Sure?';
+        setTimeout(() => { del.classList.remove('armed'); del.textContent = '🗑'; }, 3000);
+      };
+      list.appendChild(el);
+    }
+  }
+
+  let bulkStop = false;
+  async function bulkPrepare() {
+    const btn = $('#bulkStart'), status = $('#bulkStatus');
+    if (btn.dataset.running) { bulkStop = true; btn.textContent = 'Stopping…'; return; }
+    const topics = $('#bulkTopics').value.split('\n').map(t => t.trim()).filter(Boolean).slice(0, 40);
+    if (!topics.length) { toast('Write at least one topic'); return; }
+    if (state.busy) { toast('Please wait — the AI teacher is busy'); return; }
+    const base = { grade: $('#lGrade').value, subject: $('#lSubject').value, steps: +$('#lSteps').value, quiz: $('#lQuiz').checked, chalk: $('#lChalk').checked };
+    state.busy = true; bulkStop = false;
+    btn.dataset.running = '1'; btn.textContent = 'Stop';
+    let ok = 0, failed = [];
+    for (let i = 0; i < topics.length && !bulkStop; i++) {
+      status.textContent = `Preparing ${i + 1} of ${topics.length}: ${topics[i]}…`;
+      setStatus(`Preparing ${i + 1}/${topics.length}…`);
+      try {
+        const p = Object.assign({ topic: topics[i] }, base);
+        state.history = [];   // each lesson is prepared on its own
+        const reply = await generateLesson(p);
+        Native.lessons.save(lessonRecord(p, reply));
+        ok++;
+        renderLibrary();
+      } catch (e) {
+        failed.push(topics[i]);
+        if (isNetErr(e)) { status.textContent = friendlyError(e); break; }
+      }
+    }
+    state.history = [];
+    state.busy = false; setStatus('Ready');
+    delete btn.dataset.running; btn.textContent = 'Prepare lessons';
+    const left = topics.filter((t, i) => failed.includes(t) || i >= ok + failed.length);
+    $('#bulkTopics').value = left.join('\n');
+    if (!status.textContent.startsWith('No internet')) status.textContent = `✓ ${ok} lesson${ok === 1 ? '' : 's'} saved` + (left.length ? ` · ${left.length} left in the box — press again to retry` : '');
+    toast(`${ok} lesson${ok === 1 ? '' : 's'} ready for offline use`);
+  }
+
+  function exportLessons() {
+    const all = Native.lessons.list().map(m => Native.lessons.load(m.id)).filter(Boolean);
+    if (!all.length) { toast('No saved lessons to export'); return; }
+    const name = 'bhumika-lessons-' + new Date().toISOString().slice(0, 10) + '.json';
+    const where = Native.exportFile(name, JSON.stringify({ app: 'bhumika-smart-class', version: 1, lessons: all }));
+    toast(where ? `${all.length} lessons exported to ${where}` : 'Could not export the lessons', null, null, 5000);
+  }
+
+  function importLessons(file) {
+    const r = new FileReader();
+    r.onload = () => {
+      try {
+        const data = JSON.parse(r.result);
+        const list = Array.isArray(data) ? data : (data.lessons || [data]);
+        let n = 0;
+        for (const rec of list) {
+          if (!rec || !rec.reply || !Array.isArray(rec.reply.steps) || !rec.title) continue;
+          rec.id = String(rec.id || ('l' + Date.now().toString(36) + n)).replace(/[^A-Za-z0-9_-]/g, '_');
+          if (Native.lessons.save(rec)) n++;
+        }
+        renderLibrary();
+        toast(n ? `${n} lesson${n === 1 ? '' : 's'} imported` : 'No lessons found in that file', null, null, 4000);
+      } catch (_) { toast('That file is not a Bhumika lesson file'); }
+    };
+    r.readAsText(file);
   }
 
   // Quick chips that look at the board
@@ -399,8 +543,19 @@ ${quiz ? 'Finish with a "quiz" of 4 multiple-choice questions (4 options each).'
     $('#lStart').onclick = () => {
       const topic = $('#lTopic').value.trim();
       if (!topic) { $('#lTopic').focus(); toast('Type a topic first'); return; }
-      teachLesson({ topic, grade: $('#lGrade').value, subject: $('#lSubject').value, steps: +$('#lSteps').value, quiz: $('#lQuiz').checked, chalk: $('#lChalk').checked });
+      teachLesson({ topic, grade: $('#lGrade').value, subject: $('#lSubject').value, steps: +$('#lSteps').value, quiz: $('#lQuiz').checked, chalk: $('#lChalk').checked, save: $('#lSave').checked });
     };
+
+    // My Lessons
+    $('#libLangFilter').innerHTML = '<option value="">All languages</option>' + LANGS.map(l => `<option value="${l.code}">${l.native}</option>`).join('');
+    $('#libSearch').oninput = renderLibrary;
+    $('#libLangFilter').onchange = renderLibrary;
+    $('#bulkStart').onclick = bulkPrepare;
+    $('#libExport').onclick = exportLessons;
+    $('#libImport').onchange = (e) => { const f = e.target.files && e.target.files[0]; if (f) importLessons(f); e.target.value = ''; };
+    updateBadge();
+    const net = () => { if (!state.busy) setStatus(navigator.onLine === false ? 'Offline — saved lessons available' : 'Ready'); };
+    addEventListener('online', net); addEventListener('offline', net); net();
 
     const input = $('#chatInput');
     const send = () => { const t = input.value; input.value = ''; input.style.height = ''; ask(t); };
@@ -429,5 +584,5 @@ ${quiz ? 'Finish with a "quiz" of 4 multiple-choice questions (4 options each).'
     $('#sTts').onclick = () => Native.openTtsSettings();
   }
 
-  window.Teacher = { init, ask, say, teachLesson, Player, toast, listen, state, openSettings };
+  window.Teacher = { init, ask, say, teachLesson, playSaved, renderLibrary, Player, toast, listen, state, openSettings };
 })();

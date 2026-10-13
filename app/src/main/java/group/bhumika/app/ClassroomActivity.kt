@@ -102,7 +102,9 @@ class ClassroomActivity : AppCompatActivity() {
             ): Boolean {
                 fileCallback?.onReceiveValue(null)
                 fileCallback = callback
-                return try { pickImage.launch("image/*"); true } catch (e: Exception) { fileCallback = null; false }
+                val wantsImage = params?.acceptTypes?.any { it.startsWith("image") } == true
+                val type = if (wantsImage) "image/*" else "*/*"   // lesson files (.json) have no reliable MIME type
+                return try { pickImage.launch(type); true } catch (e: Exception) { fileCallback = null; false }
             }
         }
 

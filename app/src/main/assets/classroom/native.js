@@ -125,6 +125,37 @@
       return 'Downloads';
     },
 
+    // ---- saved lessons (offline library) ----
+    lessons: {
+      _ls() { try { return JSON.parse(localStorage.getItem('bh.lessons') || '{}'); } catch (_) { return {}; } },
+      _put(o) { try { localStorage.setItem('bh.lessons', JSON.stringify(o)); return true; } catch (_) { return false; } },
+      save(rec) {
+        if (A) return A.saveLesson(rec.id, JSON.stringify(rec));
+        const all = this._ls(); all[rec.id] = rec; return this._put(all);
+      },
+      list() {
+        if (A) { try { return JSON.parse(A.listLessons()); } catch (_) { return []; } }
+        return Object.values(this._ls()).map(r => { const m = Object.assign({}, r); delete m.reply; return m; });
+      },
+      load(id) {
+        if (A) { try { return JSON.parse(A.loadLesson(id) || 'null'); } catch (_) { return null; } }
+        return this._ls()[id] || null;
+      },
+      remove(id) {
+        if (A) return A.deleteLesson(id);
+        const all = this._ls(); delete all[id]; return this._put(all);
+      }
+    },
+
+    /** Saves a text file for the user (Downloads/Bhumika in the app). Returns where it went. */
+    exportFile(name, text) {
+      if (A) return A.exportFile(name, text);
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+      a.download = name; a.click();
+      return 'Downloads';
+    },
+
     openLibrary(url) {
       if (A) A.openLibrary(url);
       else window.open(url, '_blank');
