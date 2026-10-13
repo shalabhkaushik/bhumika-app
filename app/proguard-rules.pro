@@ -1,0 +1,1 @@
+-keepclassmembers class group.bhumika.app.ClassroomBridge { @android.webkit.JavascriptInterface <methods>; }
