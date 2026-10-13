@@ -1,9 +1,0 @@
-<resources>
-    <color name="brand_primary">#1E3A8A</color>
-    <color name="brand_primary_dark">#172554</color>
-    <color name="brand_accent">#F59E0B</color>
-    <color name="surface">#FFFFFF</color>
-    <color name="on_surface">#0F172A</color>
-    <color name="muted">#64748B</color>
-    <color name="ic_bg">#1E3A8A</color>
-</resources>
