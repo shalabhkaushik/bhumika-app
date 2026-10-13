@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Bhumika Smart Class</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app" class="tb-left">
+
+  <!-- Board -->
+  <main id="stage"></main>
+  <div id="widgets"></div>
+
+  <!-- Drawing toolbar (vertical; can be flipped to the other side for tall panels) -->
+  <nav id="toolbar" aria-label="Drawing tools">
+    <button class="tool on" data-tool="pen" title="Pen" data-i="pen"></button>
+    <button class="tool" data-tool="hl" title="Highlighter" data-i="hl"></button>
+    <button class="tool" data-tool="eraser" title="Eraser" data-i="eraser"></button>
+    <button class="tool" data-tool="shape" title="Shapes" data-i="shapes" id="shapeBtn"></button>
+    <button class="tool" data-tool="text" title="Text" data-i="text"></button>
+    <label class="tbtn" title="Insert picture" data-i="image"><input type="file" accept="image/*" id="imgInput" hidden></label>
+    <div class="sep"></div>
+    <button class="tbtn color-btn" id="colorBtn" title="Colour"><span id="colorDot"></span></button>
+    <button class="tbtn" id="sizeBtn" title="Thickness"><span id="sizeDot"></span></button>
+    <div class="sep"></div>
+    <button class="tbtn" id="undoBtn" title="Undo" data-i="undo"></button>
+    <button class="tbtn" id="redoBtn" title="Redo" data-i="redo"></button>
+    <button class="tbtn danger" id="clearBtn" title="Clear page" data-i="clear"></button>
+    <div class="sep"></div>
+    <button class="tbtn" id="flipBtn" title="Move toolbar to other side" data-i="swap"></button>
+  </nav>
+
+  <!-- Bottom bar -->
+  <footer id="bottombar">
+    <div class="group">
+      <button class="bbtn" id="homeBtn" title="Back to website" data-i="home"></button>
+      <button class="bbtn" id="libBtn" title="Digital Library — open a book and write on it" data-i="book"><span>Library</span></button>
+    </div>
+    <div class="group pages">
+      <button class="bbtn" id="prevPage" data-i="left" title="Previous page"></button>
+      <span id="pageNo">1 / 1</span>
+      <button class="bbtn" id="nextPage" data-i="right" title="Next page"></button>
+      <button class="bbtn" id="addPage" data-i="add" title="New page"></button>
+      <button class="bbtn" id="bgBtn" data-i="grid" title="Background"><span>Page</span></button>
+    </div>
+    <div class="group">
+      <button class="bbtn" id="toolsBtn" data-i="apps"><span>Tools</span></button>
+      <button class="bbtn" id="saveBtn" data-i="save" title="Save page as picture"></button>
+      <button class="bbtn ai" id="aiBtn" data-i="spark"><span>AI Teacher</span></button>
+    </div>
+  </footer>
+
+  <!-- Popovers -->
+  <div class="pop" id="colorPop"></div>
+  <div class="pop" id="sizePop"></div>
+  <div class="pop" id="shapePop">
+    <button data-shape="line">╱ Line</button><button data-shape="arrow">➝ Arrow</button>
+    <button data-shape="rect">▭ Rectangle</button><button data-shape="ellipse">◯ Circle</button>
+    <button data-shape="tri">△ Triangle</button>
+  </div>
+  <div class="pop" id="bgPop"></div>
+  <div class="pop grid-pop" id="toolsPop">
+    <button data-w="timer"><i>⏱</i>Timer</button>
+    <button data-w="picker"><i>🎲</i>Picker</button>
+    <button data-w="spotlight"><i>🔦</i>Spotlight</button>
+    <button data-w="curtain"><i>🪟</i>Curtain</button>
+    <button data-w="ruler"><i>📏</i>Ruler</button>
+    <button data-w="protractor"><i>📐</i>Protractor</button>
+    <button data-w="calculator"><i>🧮</i>Calculator</button>
+    <button data-w="delpage"><i>🗑</i>Delete page</button>
+    <button data-w="palm"><i>✋</i><span id="palmLbl">Palm erase: on</span></button>
+    <button data-w="fullscreen"><i>⛶</i>Full screen</button>
+  </div>
+
+  <!-- AI Teacher panel -->
+  <aside id="aiPanel" aria-label="AI Teacher">
+    <header>
+      <div class="ai-title"><span class="avatar">✦</span><div><b>AI Teacher</b><small id="aiStatus">Ready</small></div></div>
+      <button class="icon" id="settingsBtn" data-i="gear" title="Settings"></button>
+      <button class="icon" id="aiClose" data-i="close" title="Close"></button>
+    </header>
+    <div class="ai-lang">
+      <label>Language <select id="aiLang"></select></label>
+      <label class="switch"><input type="checkbox" id="aiVoice" checked><span>Voice</span></label>
+    </div>
+    <div class="tabs"><button class="on" data-tab="chat">Ask &amp; Talk</button><button data-tab="lesson">Teach a Lesson</button></div>
+
+    <section id="chatView" class="view">
+      <div id="chatLog">
+        <div class="msg ai">Namaste! I'm your AI teacher. Ask me anything by voice or text, or open <b>Teach a Lesson</b> and I'll teach the whole class on the board.</div>
+      </div>
+      <div class="chips">
+        <button data-q="explain_board">🖼 Explain the board</button>
+        <button data-q="check_board">✔ Check the answer on board</button>
+        <button data-q="quiz">📝 Quiz on this topic</button>
+        <button data-q="simpler">🙂 Explain more simply</button>
+      </div>
+      <label class="switch small"><input type="checkbox" id="writeBoard" checked><span>Write answers on the board</span></label>
+      <div class="composer">
+        <button id="micBtn" class="mic" data-i="mic" title="Speak"></button>
+        <textarea id="chatInput" rows="1" placeholder="Ask a question or give a command…"></textarea>
+        <button id="sendBtn" class="send" data-i="send" title="Send"></button>
+      </div>
+    </section>
+
+    <section id="lessonView" class="view" hidden>
+      <label>Topic<input id="lTopic" placeholder="e.g. Photosynthesis, Fractions, Parts of speech"></label>
+      <div class="two">
+        <label>Class<select id="lGrade"></select></label>
+        <label>Subject<select id="lSubject"></select></label>
+      </div>
+      <label>Length <span id="lStepsLbl">6 steps</span><input type="range" id="lSteps" min="3" max="12" value="6"></label>
+      <label class="switch small"><input type="checkbox" id="lQuiz" checked><span>End with a quiz</span></label>
+      <label class="switch small"><input type="checkbox" id="lChalk"><span>Use chalkboard background</span></label>
+      <button class="primary big" id="lStart">✦ Start teaching</button>
+      <p class="hint">The AI teacher writes notes and diagrams on the board while explaining aloud. You can pause anytime and ask questions in the <b>Ask &amp; Talk</b> tab — or press the mic on the lesson bar.</p>
+    </section>
+  </aside>
+
+  <!-- Lesson player / captions -->
+  <div id="player" hidden>
+    <span class="avatar talking">✦</span>
+    <div id="caption"></div>
+    <div class="p-ctrl">
+      <button data-p="prev" data-i="prev" title="Previous"></button>
+      <button data-p="toggle" data-i="pause" id="ppBtn" title="Pause / play"></button>
+      <button data-p="next" data-i="next" title="Next"></button>
+      <button data-p="mic" data-i="mic" title="Ask a question"></button>
+      <button data-p="stop" data-i="stop" title="Stop"></button>
+    </div>
+    <span id="stepNo"></span>
+  </div>
+
+  <!-- Listening overlay -->
+  <div id="listening" hidden><div class="pulse" data-i="mic"></div><div id="heard">Listening…</div><button id="stopListen">Done</button></div>
+
+  <!-- Settings -->
+  <div id="settings" class="modal" hidden>
+    <div class="sheet">
+      <h2>AI Teacher settings</h2>
+      <label>Claude API key <input type="password" id="sKey" placeholder="sk-ant-…" autocomplete="off"></label>
+      <p class="hint" id="sKeyHint">The key is stored only on this device. Get one at console.anthropic.com.</p>
+      <label>Model <input id="sModel" placeholder="claude-sonnet-5-5"></label>
+      <label>Server endpoint (optional) <input id="sEndpoint" placeholder="https://api.anthropic.com/v1/messages"></label>
+      <p class="hint">For schools: point this to your own proxy server so no key is needed on each panel.</p>
+      <label>Speaking speed <span id="sRateLbl">1.0×</span><input type="range" id="sRate" min="0.6" max="1.5" step="0.05" value="1"></label>
+      <div class="row"><button id="sTest">🔊 Test voice</button><button id="sTts">Voice data / TTS settings</button></div>
+      <div class="row end"><button id="sCancel">Cancel</button><button class="primary" id="sSave">Save</button></div>
+    </div>
+  </div>
+
+  <div id="toast" hidden></div>
+</div>
+
+<script src="i18n.js"></script>
+<script src="native.js"></script>
+<script src="board.js"></script>
+<script src="widgets.js"></script>
+<script src="teacher.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
