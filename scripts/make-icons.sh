@@ -5,7 +5,7 @@ set -euo pipefail
 cd web-icons-src
 mkdir -p ../store ../web-icons
 mk(){ s=$1; c=$2; o=$3
-  sz=$(python3 -c "print($c*512/320)"); x=$(python3 -c "print(($s-$c*512/320)/2-96*$c/320)"); y=$(python3 -c "print(($s-$c*512/320)/2-110*$c/320)")
+  sz=$(python3 -c "print($c*512/320)"); x=$(python3 -c "print(($s-$c)/2-96*$c/320)"); y=$(python3 -c "print(($s-$c*316/320)/2-110*$c/320)")
   echo "<svg xmlns='http://www.w3.org/2000/svg' width='$s' height='$s'><rect width='$s' height='$s' fill='#FFFFFF'/><image href='bhumika-icon.svg' x='$x' y='$y' width='$sz' height='$sz'/></svg>" > w.svg
   rsvg-convert w.svg -o $o; }
 mk 512 420 ../store/play-icon-512.png
