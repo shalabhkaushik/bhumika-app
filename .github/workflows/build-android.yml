@@ -26,7 +26,7 @@ jobs:
             gradle --no-daemon :app:assembleRelease :app:bundleRelease
           else
             echo "::warning::No signing key secrets yet - building a TEST app only (debug APK)."
-            gradle --no-daemon :app:assembleDebug
+            gradle --no-daemon --stacktrace :app:assembleDebug
           fi
       - uses: actions/upload-artifact@v4
         with:
