@@ -5,7 +5,7 @@ android {
     compileSdk 36
     defaultConfig {
         applicationId 'com.bhumikatechai.app'
-        minSdk 21
+        minSdk 23
         targetSdk 36
         versionCode Integer.parseInt(System.getenv('VERSION_CODE') ?: '1')
         versionName '1.0.' + (System.getenv('VERSION_CODE') ?: '1')
