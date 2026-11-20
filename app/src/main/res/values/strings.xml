@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">Bhumika Tech AI</string>
+    <string name="launcher_name">Bhumika AI</string>
+    <string name="launch_url">https://bhumikatechai.com/?source=app</string>
+    <string name="asset_statements" translatable="false">[{\"relation\": [\"delegate_permission/common.handle_all_urls\"], \"target\": {\"namespace\": \"web\", \"site\": \"https://bhumikatechai.com\"}}]</string>
+</resources>

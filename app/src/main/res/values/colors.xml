@@ -1,0 +1,6 @@
+<resources>
+    <color name="colorPrimary">#FF9933</color>
+    <color name="navigationColor">#FFFFFF</color>
+    <color name="backgroundColor">#FFFFFF</color>
+    <color name="iconBackground">#FFFFFF</color>
+</resources>
