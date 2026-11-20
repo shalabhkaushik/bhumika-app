@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2F6FE0"/><stop offset="1" stop-color="#173C9C"/>
+    </linearGradient>
+  </defs>
+  <!-- B letter -->
+  <path fill="url(#blue)" d="M168 128 h96 a62 62 0 0 1 40 109 a66 66 0 0 1 -30 125 h-106 a14 14 0 0 1 -14 -14 v-206 a14 14 0 0 1 14 -14 z"/>
+  <!-- circuit traces -->
+  <g stroke="#FFFFFF" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M196 182 h52 l18 -14"/>
+    <path d="M196 236 h80"/>
+    <path d="M196 290 h52 l18 14"/>
+  </g>
+  <g fill="#173C9C" stroke="#FFFFFF" stroke-width="10">
+    <circle cx="276" cy="160" r="15"/>
+    <circle cx="290" cy="236" r="15"/>
+    <circle cx="276" cy="312" r="15"/>
+  </g>
+  <!-- tricolour open book -->
+  <path fill="#FF9933" d="M96 352 C160 318 220 330 256 360 C292 330 352 318 416 352 L416 374 C352 342 292 352 256 382 C220 352 160 342 96 374 Z"/>
+  <path fill="#138808" d="M96 382 C160 350 220 362 256 392 C292 362 352 350 416 382 L416 402 C352 372 292 382 256 412 C220 382 160 372 96 402 Z"/>
+  <path fill="#173C9C" d="M256 412 C292 384 352 374 416 404 L416 418 C352 392 292 400 256 426 C220 400 160 392 96 418 L96 404 C160 374 220 384 256 412 Z"/>
+</svg>
