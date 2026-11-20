@@ -10,6 +10,7 @@ for k in "${!D[@]}"; do
   convert /tmp/logo.png -background white -alpha remove -resize ${s}x${s} -gravity center -extent ${s}x${s} $RES/mipmap-$k/ic_launcher.png
   convert /tmp/logo.png -background none -resize ${inner}x${inner} -gravity center -extent ${fg}x${fg} $RES/mipmap-$k/ic_launcher_foreground.png
 done
+mkdir -p $RES/drawable
 convert /tmp/logo.png -background none -resize 384x384 -gravity center -extent 384x384 $RES/drawable/splash.png
 # Play Store listing icon and web icons for the site
 mkdir -p store web-icons
