@@ -15,19 +15,25 @@ jobs:
         with: { gradle-version: '8.14.3' }
       - name: Make icons from the site logo
         run: sudo apt-get install -y imagemagick >/dev/null && ./scripts/make-icons.sh
-      - name: Restore signing key
-        run: echo "${{ secrets.KEYSTORE_B64 }}" | base64 -d > $RUNNER_TEMP/bhumika.jks
       - name: Build APK and AAB
         env:
-          KEYSTORE_PATH: ${{ runner.temp }}/bhumika.jks
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           VERSION_CODE: ${{ github.run_number }}
-        run: gradle --no-daemon :app:assembleRelease :app:bundleRelease
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > $RUNNER_TEMP/bhumika.jks
+            export KEYSTORE_PATH=$RUNNER_TEMP/bhumika.jks
+            gradle --no-daemon :app:assembleRelease :app:bundleRelease
+          else
+            echo "::warning::No signing key secrets yet - building a TEST app only (debug APK)."
+            gradle --no-daemon :app:assembleDebug
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: bhumika-tech-ai-android
           path: |
-            app/build/outputs/apk/release/*.apk
+            app/build/outputs/apk/*/*.apk
             app/build/outputs/bundle/release/*.aab
             store/
             web-icons/

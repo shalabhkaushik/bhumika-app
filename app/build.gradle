@@ -19,7 +19,12 @@ android {
         }
     }
     buildTypes {
-        release { minifyEnabled false; signingConfig signingConfigs.release }
+        release {
+            minifyEnabled false
+            if (System.getenv('KEYSTORE_PATH') && new File(System.getenv('KEYSTORE_PATH')).length() > 0) {
+                signingConfig signingConfigs.release
+            }
+        }
     }
     compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
 }
