@@ -3,6 +3,8 @@ on:
   push:
     branches: [bhumika-tech-ai-android]
   workflow_dispatch:
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -36,3 +38,15 @@ jobs:
             app/build/outputs/bundle/release/*.aab
             store/
             web-icons/
+      - name: Publish download on the Releases page
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p out
+          cp app/build/outputs/apk/*/*.apk out/BhumikaTechAI-v${{ github.run_number }}.apk
+          ls app/build/outputs/bundle/release/*.aab >/dev/null 2>&1 && cp app/build/outputs/bundle/release/*.aab out/BhumikaTechAI-v${{ github.run_number }}.aab || true
+          cp store/play-icon-512.png out/ ; cp web-icons/*.png out/
+          gh release delete app-latest --yes --cleanup-tag -R ${{ github.repository }} || true
+          gh release create app-latest out/* -R ${{ github.repository }} --target ${{ github.sha }} --prerelease \
+            --title "Bhumika Tech AI app (build ${{ github.run_number }})" \
+            --notes "Open the .apk on an Android phone to install (allow 'install unknown apps'). Icons for the website are included."
