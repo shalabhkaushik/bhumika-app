@@ -1,15 +1,22 @@
 #!/usr/bin/env bash
-# App icons are committed in app/src/main/res (drawn from web-icons-src/bhumika-icon.svg).
-# This makes the Play Store icon and website icons from the same SVG.
+# Builds the app icon, splash and website icons from the ORIGINAL Bhumika logo on the live site.
 set -euo pipefail
-cd web-icons-src
-mkdir -p ../store ../web-icons
-mk(){ s=$1; c=$2; o=$3
-  sz=$(python3 -c "print($c*512/320)"); x=$(python3 -c "print(($s-$c)/2-96*$c/320)"); y=$(python3 -c "print(($s-$c*316/320)/2-110*$c/320)")
-  echo "<svg xmlns='http://www.w3.org/2000/svg' width='$s' height='$s'><rect width='$s' height='$s' fill='#FFFFFF'/><image href='bhumika-icon.svg' x='$x' y='$y' width='$sz' height='$sz'/></svg>" > w.svg
-  rsvg-convert w.svg -o $o; }
-mk 512 420 ../store/play-icon-512.png
-mk 512 420 ../web-icons/icon-512.png
-mk 192 158 ../web-icons/icon-192.png
-mk 512 330 ../web-icons/icon-maskable-512.png
-rm w.svg
+RES=app/src/main/res
+curl -fsSL https://bhumikatechai.com/assets/logo-emblem.png -o /tmp/emblem.png
+curl -fsSL https://bhumikatechai.com/assets/logo-full.png   -o /tmp/full.png
+fit(){ # src  canvas  logo-width-fraction  background  out
+  w=$(python3 -c "print(int($2*$3))")
+  convert "$1" -filter Lanczos -resize ${w}x${w} -background "$4" -gravity center -extent ${2}x${2} "$5"; }
+declare -A D=([mdpi]=1 [hdpi]=1.5 [xhdpi]=2 [xxhdpi]=3 [xxxhdpi]=4)
+for k in "${!D[@]}"; do
+  L=$(python3 -c "print(int(48*${D[$k]}))"); F=$(python3 -c "print(int(108*${D[$k]}))")
+  mkdir -p $RES/mipmap-$k
+  fit /tmp/emblem.png $L 0.94 white $RES/mipmap-$k/ic_launcher.png
+  fit /tmp/emblem.png $F 0.64 none  $RES/mipmap-$k/ic_launcher_foreground.png
+done
+mkdir -p $RES/drawable store web-icons
+fit /tmp/full.png 420 0.95 none $RES/drawable/splash.png
+fit /tmp/emblem.png 512 0.94 white store/play-icon-512.png
+cp store/play-icon-512.png web-icons/icon-512.png
+fit /tmp/emblem.png 192 0.94 white web-icons/icon-192.png
+fit /tmp/emblem.png 512 0.76 white web-icons/icon-maskable-512.png
