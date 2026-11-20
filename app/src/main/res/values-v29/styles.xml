@@ -1,7 +1,7 @@
 <resources>
-    <!-- Keep the site in its real light colours even when the phone is in dark mode -->
-    <style name="BhumikaTheme" parent="@android:style/Theme.Translucent.NoTitleBar">
-        <item name="android:isLightTheme">true</item>
+    <style name="BhumikaTheme" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@drawable/launch_bg</item>
+        <item name="android:colorPrimaryDark">#FF9933</item>
         <item name="android:forceDarkAllowed">false</item>
     </style>
 </resources>
